@@ -1,20 +1,20 @@
 function [Image_Data] = LoadImage(Filename,Dark_Image,individual_dark)
-    %This function performes load and darkimage correction of data images
-    %
-    %Filename : Filename in .mat format
-    %Dark_Image : 2D or 3D Dark image array
-    %individual_dark : for 3 D datasets individual referencing
-    %
-    load(Filename); %load
-    Image_Data_raw=double(Dat); %convert int16 to double
-    
-    
-    if size(Dark_Image,3)==size(Image_Data_raw,3) &&individual_dark
-        Image_Data=Image_Data_raw-Dark_Image;
+    %loading and preprocessing Images
+    temp=(readspe_LightField(Filename));
+    data_temp=temp.data;
+    if size(Dark_Image,3)==size(data_temp,3) &&individual_dark
+        data_temp=data_temp-Dark_Image;
     else
         avg_Dark=sum(Dark_Image,3)./size(Dark_Image,3);
-        Image_Data=Image_Data_raw-repmat(avg_Dark,1,1,size(Image_Data_raw,3));
+        data_temp=data_temp-repmat(avg_Dark,1,1,size(data_temp,3));
     end 
+    line=sum(sum(Dark_Image,1),3);
+    [intensity,position]=max(line);
+    data_temp(:,position-1,:)=data_temp(:,position-2,:);
+    data_temp(:,position+1,:)=data_temp(:,position+2,:);
+    data_temp(:,position,:)=data_temp(:,position+2,:)./2+data_temp(:,position-2,:)./2;
+    %Image_Data=data_temp-repmat(min(min(data_temp,[],1),[],2),size(data_temp,1),size(data_temp,2),1);
+    Image_Data=data_temp;
 end
 
 
